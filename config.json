@@ -1,10 +1,10 @@
 {
   "telegram": {
-    "botToken": "PASTE_BOT_TOKEN_HERE",
-    "chatId": "PASTE_CHAT_ID_HERE"
+    "botToken": "SET_VIA_GITHUB_SECRET",
+    "chatId": "SET_VIA_GITHUB_SECRET"
   },
 
-  "movieUrl": "PASTE_BOOKMYSHOW_HYDERABAD_SHOWTIMES_URL_HERE",
+  "movieUrl": "https://in.bookmyshow.com/movies/hyderabad/avengers-doomsday/buytickets/ET00526320/20261217?etCodes=*&language=english&refEventCode=ET00526320",
 
   "date": "2026-12-17",
 
@@ -12,16 +12,18 @@
 
   "targets": [
     {
-      "label": "Prasad's Multiplex — Screen 6 (PCX)",
-      "venueMatch": ["Prasad", "Prasads", "Prasad's"],
-      "formatMatch": ["PCX", "Infinity Vision", "INFINITY VISION", "MX", "4DX 3D", "3D"]
+      "label": "Prasads Multiplex — Screen 6 (PCX)",
+      "venueMatch": ["Prasads Multiplex", "Prasad"],
+      "premiumMatch": ["PCX", "P C X", "Prasads Big Screen", "70MM", "IMAX"],
+      "alertOnNewFormat": true
     },
     {
-      "label": "AAA Cinemas (Allu Cinemas) — Screen 1 (Dolby Cinema)",
-      "venueMatch": ["Allu Cinemas", "AAA Cinemas", "AAA"],
-      "formatMatch": ["Dolby Cinema", "DOLBY CINEMA", "DOLBY", "3D"]
+      "label": "Allu Cinemas, Kokapet — Screen 1 (Dolby Cinema)",
+      "venueMatch": ["ALLU Cinemas", "Allu Cinemas"],
+      "premiumMatch": ["Dolby Cinema", "DOLBY CINEMA"],
+      "alertOnNewFormat": true
     }
   ],
 
-  "notes": "languages/formatMatch are case-insensitive substring matches applied within each venue's block on the chosen date. Seat selection is NOT automated — alerts include a direct link so you book middle seats yourself."
+  "notes": "Alerts fire when (a) a premiumMatch label appears at the target venue, or (b) any NEW format label appears there (safety net). Formats already present at first run (e.g. Infinity Vision 3D on other screens) are baselined and never alerted. Secrets come from GitHub Actions env. Seat selection is NOT automated."
 }
