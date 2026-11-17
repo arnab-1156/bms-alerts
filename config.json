@@ -1,0 +1,27 @@
+{
+  "telegram": {
+    "botToken": "PASTE_BOT_TOKEN_HERE",
+    "chatId": "PASTE_CHAT_ID_HERE"
+  },
+
+  "movieUrl": "PASTE_BOOKMYSHOW_HYDERABAD_SHOWTIMES_URL_HERE",
+
+  "date": "2026-12-17",
+
+  "languages": ["English"],
+
+  "targets": [
+    {
+      "label": "Prasad's Multiplex — Screen 6 (PCX)",
+      "venueMatch": ["Prasad", "Prasads", "Prasad's"],
+      "formatMatch": ["PCX", "Infinity Vision", "INFINITY VISION", "MX", "4DX 3D", "3D"]
+    },
+    {
+      "label": "AAA Cinemas (Allu Cinemas) — Screen 1 (Dolby Cinema)",
+      "venueMatch": ["Allu Cinemas", "AAA Cinemas", "AAA"],
+      "formatMatch": ["Dolby Cinema", "DOLBY CINEMA", "DOLBY", "3D"]
+    }
+  ],
+
+  "notes": "languages/formatMatch are case-insensitive substring matches applied within each venue's block on the chosen date. Seat selection is NOT automated — alerts include a direct link so you book middle seats yourself."
+}

@@ -1,0 +1,15 @@
+{
+  "name": "bms-alerts",
+  "version": "1.0.0",
+  "description": "Monitor BookMyShow for Avengers: Doomsday showtimes at specific Hyderabad theatres and alert via Telegram.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "monitor": "node monitor.mjs",
+    "test-alert": "node monitor.mjs --test",
+    "get-chat-id": "node monitor.mjs --getid"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -1,0 +1,53 @@
+name: BMS Doomsday Monitor
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub's minimum). Times are UTC; interval-based so timezone doesn't matter.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {} # lets you trigger a manual run from the Actions tab
+
+concurrency:
+  group: bms-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Persist the alert de-dup state across runs (so you aren't pinged every 5 min).
+      - name: Restore alert state
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: bms-state-${{ github.run_id }}
+          restore-keys: |
+            bms-state-
+
+      # Cache the Chromium download to keep runs fast.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MOVIE_URL: ${{ secrets.MOVIE_URL }}
+        run: node monitor.mjs --once
