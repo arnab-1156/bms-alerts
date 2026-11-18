@@ -6,7 +6,12 @@ name: BMS Doomsday Monitor
 # run ever dies unexpectedly.
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      loop_minutes:
+        description: "Minutes to run before self-restarting (default 330 = ~5.5h). Use a small value to test the self-restart."
+        required: false
+        default: "330"
   schedule:
     - cron: "*/30 * * * *" # best-effort backup restart; the loop self-restarts via ACTIONS_PAT
 
@@ -53,8 +58,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           MOVIE_URL: ${{ secrets.MOVIE_URL }}
+          LOOP_MINUTES: ${{ github.event.inputs.loop_minutes }}
         run: |
-          END=$(( $(date +%s) + 5*3600 + 1800 ))   # ~5h30m, then exit gracefully
+          MINUTES="${LOOP_MINUTES:-330}"
+          case "$MINUTES" in *[!0-9]*|'') MINUTES=330;; esac
+          echo "loop window: ${MINUTES} min"
+          END=$(( $(date +%s) + MINUTES*60 ))
           i=0
           while [ "$(date +%s)" -lt "$END" ]; do
             i=$((i+1))
