@@ -1,19 +1,23 @@
 name: BMS Doomsday Monitor
 
+# Reliable 5-minute checking WITHOUT depending on GitHub's (unreliable) cron:
+# one job runs for ~5.5 hours, checking every 5 min internally, then re-launches
+# itself. The sparse schedule below is only a safety net to restart the loop if a
+# run ever dies unexpectedly.
+
 on:
+  workflow_dispatch: {}
   schedule:
-    # Every 5 minutes (GitHub's minimum). Times are UTC; interval-based so timezone doesn't matter.
-    - cron: "*/5 * * * *"
-  workflow_dispatch: {} # lets you trigger a manual run from the Actions tab
+    - cron: "*/30 * * * *" # best-effort backup restart; the loop self-restarts via ACTIONS_PAT
 
 concurrency:
   group: bms-monitor
   cancel-in-progress: false
 
 jobs:
-  check:
+  watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -21,7 +25,7 @@ jobs:
         with:
           node-version: "20"
 
-      # Persist the alert de-dup state across runs (so you aren't pinged every 5 min).
+      # Carry alert/baseline/heartbeat state across loop restarts.
       - name: Restore alert state
         uses: actions/cache@v4
         with:
@@ -30,7 +34,6 @@ jobs:
           restore-keys: |
             bms-state-
 
-      # Cache the Chromium download to keep runs fast.
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
@@ -45,9 +48,32 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run monitor
+      - name: Watch loop (check every 5 min for ~5.5h)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           MOVIE_URL: ${{ secrets.MOVIE_URL }}
-        run: node monitor.mjs --once
+        run: |
+          END=$(( $(date +%s) + 5*3600 + 1800 ))   # ~5h30m, then exit gracefully
+          i=0
+          while [ "$(date +%s)" -lt "$END" ]; do
+            i=$((i+1))
+            echo "::group::check #$i ($(date -u '+%H:%M:%S') UTC)"
+            node monitor.mjs || true
+            echo "::endgroup::"
+            # don't start a sleep that would overrun the window
+            [ "$(( $(date +%s) + 300 ))" -ge "$END" ] && break
+            sleep 300
+          done
+          echo "loop finished after $i checks"
+
+      - name: Re-launch next loop (self-restart)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          if [ -n "$GH_TOKEN" ]; then
+            gh workflow run monitor.yml --repo "${{ github.repository }}" && echo "next loop dispatched"
+          else
+            echo "ACTIONS_PAT secret not set yet -> relying on the */30 schedule to restart."
+          fi
