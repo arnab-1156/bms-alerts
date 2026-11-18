@@ -10,6 +10,8 @@
 
   "languages": ["English"],
 
+  "heartbeat": { "enabled": true, "hourIST": 9 },
+
   "targets": [
     {
       "label": "Prasads Multiplex — Screen 6 (PCX)",

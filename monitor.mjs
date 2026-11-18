@@ -242,6 +242,20 @@ function premiumAlert(r, cfg) {
   );
 }
 
+function buildHeartbeat(results, cfg) {
+  const lines = results.map((r) => {
+    if (!r.found) return `• ${r.target.label}: not listed right now`;
+    if (r.premiumHit) return `• ${r.target.label}: 🎯 OPEN NOW (${r.premiumHit}) — book!`;
+    const n = (r.times || []).length;
+    return `• ${r.target.label}: not open yet (only ${n} other-screen show${n === 1 ? "" : "s"} listed)`;
+  });
+  return (
+    `🫡 <b>Doomsday watch — daily check-in</b> (${escapeHtml(cfg.date)}, English)\n` +
+    `Monitor is running on schedule. Status:\n${lines.map(escapeHtml).join("\n")}\n\n` +
+    `I'll ping you the moment your PCX / Dolby Cinema screen opens.`
+  );
+}
+
 function newFormatAlert(r, cfg, fresh) {
   return (
     `🆕 <b>New show type at ${escapeHtml(r.matchedVenue)} — check if it's your screen!</b>\n\n` +
@@ -343,6 +357,26 @@ async function main() {
     // Grow the baseline (store normalized; existing labels never re-alert).
     state.baseline[key] = Array.from(new Set([...(prev || []), ...cur.map(norm)]));
     saveState(state);
+  }
+
+  // Daily heartbeat — one "still watching" message per IST day, after the
+  // configured hour, so you get passive confirmation without checking GitHub.
+  const hb = cfg.heartbeat || {};
+  if (hb.enabled && !MODE_BASELINE) {
+    const ist = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000); // UTC -> IST
+    const istDate = ist.toISOString().slice(0, 10);
+    const istHour = ist.getUTCHours();
+    const targetHour = Number.isInteger(hb.hourIST) ? hb.hourIST : 9;
+    const forced = !!process.env.HEARTBEAT_FORCE;
+    if (forced || (state.lastHeartbeat !== istDate && istHour >= targetHour)) {
+      if (await sendTelegram(cfg, buildHeartbeat(results, cfg))) {
+        state.lastHeartbeat = istDate;
+        saveState(state);
+        log(`Heartbeat sent for ${istDate} (IST).`);
+      }
+    } else {
+      log(`Heartbeat: skip (last=${state.lastHeartbeat || "none"}, istDate=${istDate}, istHour=${istHour}, targetHour=${targetHour}).`);
+    }
   }
 }
 
